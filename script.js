@@ -1,248 +1,122 @@
-// ================================
-// GAME ULAR TANGGA
-// ================================
+// =============================
+// DATA ULAR DAN TANGGA
+// =============================
+const tangga = {
+    4: 40,
+    8: 28,
+    20: 51,
+    40: 71
+};
 
-const board = document.getElementById("board");
-const dice = document.getElementById("dice");
-const rollButton = document.getElementById("rollButton");
-const turnText = document.getElementById("turn");
-
-let players = [
-    {
-        name: "Pemain 1",
-        position: 1,
-        element: null
-    },
-    {
-        name: "Pemain 2",
-        position: 1,
-        element: null
-    }
-];
-
-let currentPlayer = 0;
-let gameOver = false;
-
-// ================================
-// POSISI ULAR
-// ================================
-
-const snakes = {
-    98: 40,
+const ular = {
+    16: 6,
+    25: 15,
+    39: 18,
+    48: 30,
+    64: 44,
+    92: 73,
     95: 75,
-    92: 88,
-    64: 60,
-    48: 26,
-    39: 2,
-    25: 5,
-    16: 6
+    98: 78
 };
 
-// ================================
-// POSISI TANGGA
-// ================================
+// =============================
+// DATA PEMAIN
+// =============================
+let posisiPemain = 1;
+let giliran = true;
 
-const ladders = {
-    4: 25,
-    8: 31,
-    20: 41,
-    28: 55,
-    40: 59,
-    51: 67,
-    63: 81,
-    71: 91
-};
+// =============================
+// TOMBOL LEMPAR DADU
+// =============================
+const tombolDadu = document.getElementById("lemparDadu");
 
-// ================================
-// MEMBUAT PAPAN 100 KOTAK
-// ================================
-
-function createBoard() {
-    board.innerHTML = "";
-
-    for (let i = 100; i >= 1; i--) {
-        const cell = document.createElement("div");
-
-        cell.classList.add("cell");
-        cell.dataset.position = i;
-        cell.textContent = i;
-
-        // Tandai tangga
-        if (ladders[i]) {
-            cell.classList.add("ladder");
-            cell.title = `Tangga → ${ladders[i]}`;
-        }
-
-        // Tandai ular
-        if (snakes[i]) {
-            cell.classList.add("snake");
-            cell.title = `Ular → ${snakes[i]}`;
-        }
-
-        board.appendChild(cell);
-    }
+if (tombolDadu) {
+    tombolDadu.addEventListener("click", lemparDadu);
 }
 
-// ================================
-// MEMBUAT PION
-// ================================
+function lemparDadu() {
+    if (!giliran) return;
 
-function createPlayers() {
-    players.forEach((player, index) => {
-        const pawn = document.createElement("div");
+    // Angka dadu 1-6
+    const dadu = Math.floor(Math.random() * 6) + 1;
 
-        pawn.classList.add("pawn");
-        pawn.classList.add(`player${index + 1}`);
+    console.log("Dadu:", dadu);
 
-        pawn.textContent = index + 1;
+    // Tampilkan angka dadu
+    const hasilDadu = document.getElementById("hasilDadu");
 
-        player.element = pawn;
-
-        updatePawn(player);
-    });
-}
-
-// ================================
-// MEMINDAHKAN PION
-// ================================
-
-function updatePawn(player) {
-    const cell = document.querySelector(
-        `.cell[data-position="${player.position}"]`
-    );
-
-    if (cell && player.element) {
-        cell.appendChild(player.element);
-    }
-}
-
-// ================================
-// MENGGULINGKAN DADU
-// ================================
-
-function rollDice() {
-    if (gameOver) return;
-
-    const result = Math.floor(Math.random() * 6) + 1;
-
-    dice.textContent = result;
-
-    movePlayer(result);
-}
-
-// ================================
-// GERAK PEMAIN
-// ================================
-
-function movePlayer(steps) {
-    const player = players[currentPlayer];
-
-    let newPosition = player.position + steps;
-
-    // Tidak boleh melewati kotak 100
-    if (newPosition > 100) {
-        turnText.textContent =
-            `${player.name} mendapat ${steps}, tetapi tidak bisa bergerak.`;
-
-        changeTurn();
-        return;
+    if (hasilDadu) {
+        hasilDadu.textContent = "🎲 Dadu: " + dadu;
     }
 
-    player.position = newPosition;
+    // Bergerak
+    let tujuan = posisiPemain + dadu;
 
-    updatePawn(player);
+    // Tidak boleh melewati 100
+    if (tujuan > 100) {
+        tujuan = posisiPemain;
+    }
+
+    posisiPemain = tujuan;
 
     // Cek tangga
-    if (ladders[player.position]) {
-        const oldPosition = player.position;
+    if (tangga[posisiPemain]) {
+        setTimeout(() => {
+            alert(
+                "🪜 Naik tangga! " +
+                posisiPemain +
+                " → " +
+                tangga[posisiPemain]
+            );
 
-        player.position = ladders[player.position];
-
-        updatePawn(player);
-
-        turnText.textContent =
-            `🪜 ${player.name} naik tangga dari ${oldPosition} ke ${player.position}!`;
+            posisiPemain = tangga[posisiPemain];
+            pindahkanPion();
+        }, 300);
     }
 
     // Cek ular
-    else if (snakes[player.position]) {
-        const oldPosition = player.position;
+    else if (ular[posisiPemain]) {
+        setTimeout(() => {
+            alert(
+                "🐍 Kena ular! " +
+                posisiPemain +
+                " → " +
+                ular[posisiPemain]
+            );
 
-        player.position = snakes[player.position];
-
-        updatePawn(player);
-
-        turnText.textContent =
-            `🐍 ${player.name} terkena ular! Turun dari ${oldPosition} ke ${player.position}.`;
+            posisiPemain = ular[posisiPemain];
+            pindahkanPion();
+        }, 300);
     }
 
-    // Cek pemenang
-    if (player.position === 100) {
-        turnText.textContent =
-            `🏆 ${player.name} MENANG!`;
+    pindahkanPion();
 
-        gameOver = true;
-        rollButton.disabled = true;
+    // Menang
+    if (posisiPemain === 100) {
+        setTimeout(() => {
+            alert("🎉 Selamat! Pemain 1 menang!");
+            giliran = false;
+        }, 400);
+    }
+}
 
-        return;
+// =============================
+// MEMINDAHKAN PION
+// =============================
+function pindahkanPion() {
+    const kotak = document.querySelector(
+        `[data-cell="${posisiPemain}"]`
+    );
+
+    const pion = document.getElementById("pion1");
+
+    if (kotak && pion) {
+        kotak.appendChild(pion);
     }
 
-    // Ganti giliran
-    setTimeout(() => {
-        changeTurn();
-    }, 700);
+    const posisi = document.getElementById("posisiPemain");
+
+    if (posisi) {
+        posisi.textContent = "Posisi: " + posisiPemain;
+    }
 }
-
-// ================================
-// GANTI GILIRAN
-// ================================
-
-function changeTurn() {
-    currentPlayer = currentPlayer === 0 ? 1 : 0;
-
-    turnText.textContent =
-        `Giliran ${players[currentPlayer].name}`;
-}
-
-// ================================
-// RESET GAME
-// ================================
-
-function resetGame() {
-    players[0].position = 1;
-    players[1].position = 1;
-
-    currentPlayer = 0;
-    gameOver = false;
-
-    dice.textContent = "🎲";
-
-    rollButton.disabled = false;
-
-    updatePawn(players[0]);
-    updatePawn(players[1]);
-
-    turnText.textContent = "Giliran Pemain 1";
-}
-
-// ================================
-// EVENT TOMBOL
-// ================================
-
-rollButton.addEventListener("click", rollDice);
-
-// Jika ada tombol reset dengan id="resetButton"
-const resetButton = document.getElementById("resetButton");
-
-if (resetButton) {
-    resetButton.addEventListener("click", resetGame);
-}
-
-// ================================
-// MULAI GAME
-// ================================
-
-createBoard();
-createPlayers();
-
-turnText.textContent = "Giliran Pemain 1";
