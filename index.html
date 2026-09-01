@@ -1,52 +1,429 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Ular Tangga</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ular Tangga</title>
 
-    <link rel="stylesheet" href="style.css">
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #75d9dc, #b8f3f0);
+    text-align: center;
+    color: #222;
+}
+
+h1 {
+    margin: 20px 0 5px;
+}
+
+.info {
+    background: white;
+    max-width: 900px;
+    margin: auto;
+    padding: 12px;
+    border-radius: 15px;
+    font-size: 18px;
+}
+
+/* PAPAN */
+#board {
+    position: relative;
+    width: min(90vw, 700px);
+    aspect-ratio: 1 / 1;
+    margin: 20px auto;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    border: 4px solid #222;
+    background: white;
+    overflow: hidden;
+}
+
+/* KOTAK */
+.cell {
+    position: relative;
+    border: 1px solid #777;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: clamp(10px, 2vw, 17px);
+}
+
+/* warna kotak */
+.cell:nth-child(odd) {
+    background: #eaf7ff;
+}
+
+.cell:nth-child(even) {
+    background: #fff;
+}
+
+/* ULAR */
+.snake {
+    position: absolute;
+    font-size: clamp(25px, 6vw, 55px);
+    z-index: 5;
+    transform: rotate(-20deg);
+}
+
+/* TANGGA */
+.ladder {
+    position: absolute;
+    font-size: clamp(25px, 6vw, 55px);
+    z-index: 5;
+}
+
+/* PION */
+.pion {
+    position: absolute;
+    z-index: 20;
+    font-size: 28px;
+    transform: translate(-50%, -50%);
+    transition: all 0.4s;
+    pointer-events: none;
+}
+
+/* CONTROLS */
+.controls {
+    margin: 15px;
+}
+
+button {
+    border: none;
+    padding: 13px 25px;
+    margin: 5px;
+    border-radius: 10px;
+    background: #1677d2;
+    color: white;
+    font-size: 17px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #0b5aaa;
+}
+
+button:disabled {
+    background: #999;
+}
+
+#dice {
+    font-size: 45px;
+    margin: 10px;
+}
+
+#pesan {
+    font-weight: bold;
+    min-height: 25px;
+}
+</style>
 </head>
 
 <body>
 
-    <div class="game">
-        <h1>🐍 Ular Tangga 🪜</h1>
+<h1>🐍 Ular Tangga 🪜</h1>
 
-        <div class="info">
-            <p id="turn">Giliran: Pemain 1</p>
-            <p id="diceResult">🎲 Dadu: -</p>
-        </div>
+<div class="info">
+    <div>Giliran: <b id="giliran">Pemain 1</b></div>
+    <div>🎲 Dadu: <b id="hasil">-</b></div>
+</div>
 
-        <!-- Papan Ular Tangga -->
-        <div id="board" class="board">
+<div id="board">
 
-            <!-- Kotak 1 - 100 dibuat oleh JavaScript -->
+    <!-- PION -->
+    <div id="pion" class="pion">🔴</div>
 
-        </div>
+    <!-- ULAR -->
+    <div class="snake" style="left:75%; top:5%;">🐍</div>
+    <div class="snake" style="left:35%; top:25%;">🐍</div>
+    <div class="snake" style="left:65%; top:55%;">🐍</div>
+    <div class="snake" style="left:45%; top:75%;">🐍</div>
 
-        <div class="players">
-            <div class="player player1">
-                🔵 Pemain 1: <span id="position1">1</span>
-            </div>
+    <!-- TANGGA -->
+    <div class="ladder" style="left:35%; top:55%;">🪜</div>
+    <div class="ladder" style="left:15%; top:70%;">🪜</div>
+    <div class="ladder" style="left:55%; top:40%;">🪜</div>
+    <div class="ladder" style="left:85%; top:70%;">🪜</div>
 
-            <div class="player player2">
-                🔴 Pemain 2: <span id="position2">1</span>
-            </div>
-        </div>
+</div>
 
-        <button id="rollButton" onclick="rollDice()">
-            🎲 Lempar Dadu
-        </button>
+<div class="controls">
+    <div id="dice">🎲</div>
 
-        <button id="resetButton" onclick="resetGame()">
-            🔄 Mulai Ulang
-        </button>
+    <button id="lemparDadu">
+        🎲 Lempar Dadu
+    </button>
 
-        <p id="message">Selamat bermain!</p>
-    </div>
+    <button onclick="mulaiUlang()">
+        🔄 Mulai Ulang
+    </button>
 
-    <script src="script.js"></script>
-    
+    <div id="pesan"></div>
+</div>
+
+<script>
+
+// ==========================
+// MEMBUAT KOTAK 1 - 100
+// ==========================
+
+const board = document.getElementById("board");
+
+// Simpan pion dulu
+const pion = document.getElementById("pion");
+
+// Buat kotak dari 100 sampai 1
+for (let i = 100; i >= 1; i--) {
+
+    const cell = document.createElement("div");
+
+    cell.className = "cell";
+
+    cell.dataset.nomor = i;
+
+    cell.textContent = i;
+
+    board.appendChild(cell);
+}
+
+
+// ==========================
+// DATA ULAR
+// ==========================
+
+const ular = {
+    16: 6,
+    25: 15,
+    39: 18,
+    48: 30,
+    64: 44,
+    92: 73,
+    95: 75,
+    98: 78
+};
+
+
+// ==========================
+// DATA TANGGA
+// ==========================
+
+const tangga = {
+    4: 40,
+    8: 28,
+    20: 51,
+    40: 71
+};
+
+
+// ==========================
+// POSISI PEMAIN
+// ==========================
+
+let posisi = 1;
+let sedangBerjalan = false;
+
+
+// ==========================
+// TOMBOL DADU
+// ==========================
+
+document.getElementById("lemparDadu")
+.addEventListener("click", lemparDadu);
+
+
+function lemparDadu() {
+
+    if (sedangBerjalan) return;
+
+    sedangBerjalan = true;
+
+    const angka =
+        Math.floor(Math.random() * 6) + 1;
+
+    document.getElementById("hasil")
+        .textContent = angka;
+
+    document.getElementById("dice")
+        .textContent = getDice(angka);
+
+    let tujuan = posisi + angka;
+
+
+    // Tidak boleh lebih dari 100
+    if (tujuan > 100) {
+
+        document.getElementById("pesan")
+            .textContent =
+            "Tidak bisa bergerak, terlalu jauh!";
+
+        sedangBerjalan = false;
+
+        return;
+    }
+
+
+    // Bergerak satu-satu
+    gerakKe(tujuan);
+}
+
+
+// ==========================
+// GERAK PION
+// ==========================
+
+function gerakKe(tujuan) {
+
+    posisi = tujuan;
+
+    const cell =
+        document.querySelector(
+            `[data-nomor="${posisi}"]`
+        );
+
+    if (!cell) return;
+
+
+    // Posisi tengah kotak
+    const x =
+        cell.offsetLeft +
+        cell.offsetWidth / 2;
+
+    const y =
+        cell.offsetTop +
+        cell.offsetHeight / 2;
+
+
+    pion.style.left = x + "px";
+    pion.style.top = y + "px";
+
+
+    // Cek ular
+    if (ular[posisi]) {
+
+        setTimeout(() => {
+
+            document.getElementById("pesan")
+                .textContent =
+                "🐍 Kena ular! Turun!";
+
+            gerakKe(ular[posisi]);
+
+        }, 700);
+
+        return;
+    }
+
+
+    // Cek tangga
+    if (tangga[posisi]) {
+
+        setTimeout(() => {
+
+            document.getElementById("pesan")
+                .textContent =
+                "🪜 Naik tangga!";
+
+            gerakKe(tangga[posisi]);
+
+        }, 700);
+
+        return;
+    }
+
+
+    // Menang
+    if (posisi === 100) {
+
+        document.getElementById("pesan")
+            .textContent =
+            "🎉 PEMAIN 1 MENANG!";
+
+        sedangBerjalan = false;
+
+        return;
+    }
+
+
+    document.getElementById("pesan")
+        .textContent =
+        "Posisi pemain: " + posisi;
+
+    sedangBerjalan = false;
+}
+
+
+// ==========================
+// GAMBAR DADU
+// ==========================
+
+function getDice(n) {
+
+    const dadu = [
+        "",
+        "⚀",
+        "⚁",
+        "⚂",
+        "⚃",
+        "⚄",
+        "⚅"
+    ];
+
+    return dadu[n];
+}
+
+
+// ==========================
+// MULAI ULANG
+// ==========================
+
+function mulaiUlang() {
+
+    posisi = 1;
+
+    document.getElementById("hasil")
+        .textContent = "-";
+
+    document.getElementById("dice")
+        .textContent = "🎲";
+
+    document.getElementById("pesan")
+        .textContent = "Permainan dimulai!";
+
+    const cell =
+        document.querySelector(
+            `[data-nomor="1"]`
+        );
+
+    const x =
+        cell.offsetLeft +
+        cell.offsetWidth / 2;
+
+    const y =
+        cell.offsetTop +
+        cell.offsetHeight / 2;
+
+    pion.style.left = x + "px";
+    pion.style.top = y + "px";
+
+    sedangBerjalan = false;
+}
+
+
+// ==========================
+// POSISI AWAL PION
+// ==========================
+
+window.addEventListener("load", () => {
+    mulaiUlang();
+});
+
+</script>
+
 </body>
 </html>
