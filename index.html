@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Ular Tangga</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="game">
+        <h1>🐍 Ular Tangga 🪜</h1>
+
+        <div class="info">
+            <p id="turn">Giliran: Pemain 1</p>
+            <p id="diceResult">🎲 Dadu: -</p>
+        </div>
+
+        <!-- Papan Ular Tangga -->
+        <div id="board" class="board">
+
+            <!-- Kotak 1 - 100 dibuat oleh JavaScript -->
+
+        </div>
+
+        <div class="players">
+            <div class="player player1">
+                🔵 Pemain 1: <span id="position1">1</span>
+            </div>
+
+            <div class="player player2">
+                🔴 Pemain 2: <span id="position2">1</span>
+            </div>
+        </div>
+
+        <button id="rollButton" onclick="rollDice()">
+            🎲 Lempar Dadu
+        </button>
+
+        <button id="resetButton" onclick="resetGame()">
+            🔄 Mulai Ulang
+        </button>
+
+        <p id="message">Selamat bermain!</p>
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
