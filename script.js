@@ -4,7 +4,7 @@
 
 // Posisi awal pemain
 let posisiPemain1 = 1;
-let posisiPemain2 = 1;
+let posisiPemain2 = 2;
 
 // Giliran pemain
 let giliran = 1;
