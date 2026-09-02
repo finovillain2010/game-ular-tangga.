@@ -1,431 +1,887 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ular Tangga</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ular Tangga Modern 🐍🪜</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-<style>
-* {
-    box-sizing: border-box;
-}
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at top left, #1e1b4b, #0f172a);
+            color: #f8fafc;
+            user-select: none;
+            min-height: 100vh;
+        }
 
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #75d9dc, #b8f3f0);
-    text-align: center;
-    color: #222;
-}
+        .board-container {
+            position: relative;
+            width: 100%;
+            max-width: 680px;
+            aspect-ratio: 1 / 1;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(99, 102, 241, 0.2);
+        }
 
-h1 {
-    margin: 20px 0 5px;
-}
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            width: 100%;
+            height: 100%;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
 
-.info {
-    background: white;
-    max-width: 900px;
-    margin: auto;
-    padding: 12px;
-    border-radius: 15px;
-    font-size: 18px;
-}
+        .cell {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            padding: 2px 4px;
+            font-weight: 700;
+            font-size: clamp(9px, 1.6vw, 13px);
+            transition: background 0.2s;
+        }
 
-/* PAPAN */
-#board {
-    position: relative;
-    width: min(90vw, 700px);
-    aspect-ratio: 1 / 1;
-    margin: 20px auto;
-    display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    border: 4px solid #222;
-    background: white;
-    overflow: hidden;
-}
+        /* SVG Overlays for Snakes & Ladders */
+        #svg-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
 
-/* KOTAK */
-.cell {
-    position: relative;
-    border: 1px solid #777;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    font-size: clamp(10px, 2vw, 17px);
-}
+        /* Pawns Layer */
+        #pawns-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 20;
+        }
 
-/* warna kotak */
-.cell:nth-child(odd) {
-    background: #eaf7ff;
-}
+        .pawn {
+            position: absolute;
+            width: clamp(22px, 4vw, 36px);
+            height: clamp(22px, 4vw, 36px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(12px, 2.2vw, 18px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.4);
+            transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.2s;
+            transform: translate(-50%, -50%);
+        }
 
-.cell:nth-child(even) {
-    background: #fff;
-}
+        .pawn-hop {
+            animation: hop 0.35s ease-in-out;
+        }
 
-/* ULAR */
-.snake {
-    position: absolute;
-    font-size: clamp(25px, 6vw, 55px);
-    z-index: 5;
-    transform: rotate(-20deg);
-}
+        @keyframes hop {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -90%) scale(1.25); }
+        }
 
-/* TANGGA */
-.ladder {
-    position: absolute;
-    font-size: clamp(25px, 6vw, 55px);
-    z-index: 5;
-}
+        /* 3D Dice styling */
+        .dice-box {
+            perspective: 600px;
+        }
+        
+        .dice-3d {
+            width: 64px;
+            height: 64px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
 
-/* PION */
-.pion {
-    position: absolute;
-    z-index: 20;
-    font-size: 28px;
-    transform: translate(-50%, -50%);
-    transition: all 0.4s;
-    pointer-events: none;
-}
+        .dice-rolling {
+            animation: roll3d 0.8s infinite linear;
+        }
 
-/* CONTROLS */
-.controls {
-    margin: 15px;
-}
+        @keyframes roll3d {
+            0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+            100% { transform: rotateX(720deg) rotateY(360deg) rotateZ(360deg); }
+        }
 
-button {
-    border: none;
-    padding: 13px 25px;
-    margin: 5px;
-    border-radius: 10px;
-    background: #1677d2;
-    color: white;
-    font-size: 17px;
-    cursor: pointer;
-}
+        /* Glassmorphism panel */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
 
-button:hover {
-    background: #0b5aaa;
-}
-
-button:disabled {
-    background: #999;
-}
-
-#dice {
-    font-size: 45px;
-    margin: 10px;
-}
-
-#pesan {
-    font-weight: bold;
-    min-height: 25px;
-}
-</style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+    </style>
 </head>
-
-<body>
-
-<h1>🐍 Ular Tangga 🪜</h1>
-
-<div class="info">
-    <div>Giliran: <b id="giliran">Pemain 1</b></div>
-    <div>🎲 Dadu: <b id="hasil">-</b></div>
-</div>
-
-<div id="board">
-
-    <!-- PION -->
-    <div id="pion" class="pion">🔴</div>
-
-    <!-- ULAR -->
-    <div class="snake" style="left:75%; top:5%;">🐍</div>
-    <div class="snake" style="left:35%; top:25%;">🐍</div>
-    <div class="snake" style="left:65%; top:55%;">🐍</div>
-    <div class="snake" style="left:45%; top:75%;">🐍</div>
-    <div class="snake" style="left:55%; top:65%;">🐍</div>
-    <div class="snake" style="left:100%; top:99%;">🐍</div>
-
-    <!-- TANGGA -->
-    <div class="ladder" style="left:35%; top:55%;">🪜</div>
-    <div class="ladder" style="left:15%; top:70%;">🪜</div>
-    <div class="ladder" style="left:55%; top:40%;">🪜</div>
-    <div class="ladder" style="left:85%; top:70%;">🪜</div>
-
-</div>
-
-<div class="controls">
-    <div id="dice">🎲</div>
-
-    <button id="lemparDadu">
-        🎲 Lempar Dadu
-    </button>
-
-    <button onclick="mulaiUlang()">
-        🔄 Mulai Ulang
-    </button>
-
-    <div id="pesan"></div>
-</div>
-
-<script>
-
-// ==========================
-// MEMBUAT KOTAK 1 - 100
-// ==========================
-
-const board = document.getElementById("board");
-
-// Simpan pion dulu
-const pion = document.getElementById("pion");
-
-// Buat kotak dari 100 sampai 1
-for (let i = 100; i >= 1; i--) {
-
-    const cell = document.createElement("div");
-
-    cell.className = "cell";
-
-    cell.dataset.nomor = i;
-
-    cell.textContent = i;
-
-    board.appendChild(cell);
-}
-
-
-// ==========================
-// DATA ULAR
-// ==========================
-
-const ular = {
-    26: 1,
-    36: 15,
-    39: 18,
-    48: 30,
-    64: 44,
-    92: 73,
-    95: 75,
-    99: 26
-};
-
-
-// ==========================
-// DATA TANGGA
-// ==========================
-
-const tangga = {
-    4: 40,
-    8: 28,
-    20: 51,
-    40: 71
-};
-
-
-// ==========================
-// POSISI PEMAIN
-// ==========================
-
-let posisi = 1;
-let sedangBerjalan = false;
-
-
-// ==========================
-// TOMBOL DADU
-// ==========================
-
-document.getElementById("lemparDadu")
-.addEventListener("click", lemparDadu);
-
-
-function lemparDadu() {
-
-    if (sedangBerjalan) return;
-
-    sedangBerjalan = true;
-
-    const angka =
-        Math.floor(Math.random() * 6) + 1;
-
-    document.getElementById("hasil")
-        .textContent = angka;
-
-    document.getElementById("dice")
-        .textContent = getDice(angka);
-
-    let tujuan = posisi + angka;
-
-
-    // Tidak boleh lebih dari 100
-    if (tujuan > 100) {
-
-        document.getElementById("pesan")
-            .textContent =
-            "Tidak bisa bergerak, terlalu jauh!";
-
-        sedangBerjalan = false;
-
-        return;
-    }
-
-
-    // Bergerak satu-satu
-    gerakKe(tujuan);
-}
-
-
-// ==========================
-// GERAK PION
-// ==========================
-
-function gerakKe(tujuan) {
-
-    posisi = tujuan;
-
-    const cell =
-        document.querySelector(
-            `[data-nomor="${posisi}"]`
-        );
-
-    if (!cell) return;
-
-
-    // Posisi tengah kotak
-    const x =
-        cell.offsetLeft +
-        cell.offsetWidth / 2;
-
-    const y =
-        cell.offsetTop +
-        cell.offsetHeight / 2;
-
-
-    pion.style.left = x + "px";
-    pion.style.top = y + "px";
-
-
-    // Cek ular
-    if (ular[posisi]) {
-
-        setTimeout(() => {
-
-            document.getElementById("pesan")
-                .textContent =
-                "🐍 Kena ular! Turun!";
-
-            gerakKe(ular[posisi]);
-
-        }, 700);
-
-        return;
-    }
-
-
-    // Cek tangga
-    if (tangga[posisi]) {
-
-        setTimeout(() => {
-
-            document.getElementById("pesan")
-                .textContent =
-                "🪜 Naik tangga!";
-
-            gerakKe(tangga[posisi]);
-
-        }, 700);
-
-        return;
-    }
-
-
-    // Menang
-    if (posisi === 100) {
-
-        document.getElementById("pesan")
-            .textContent =
-            "🎉 PEMAIN 1 MENANG!";
-
-        sedangBerjalan = false;
-
-        return;
-    }
-
-
-    document.getElementById("pesan")
-        .textContent =
-        "Posisi pemain: " + posisi;
-
-    sedangBerjalan = false;
-}
-
-
-// ==========================
-// GAMBAR DADU
-// ==========================
-
-function getDice(n) {
-
-    const dadu = [
-        "",
-        "⚀",
-        "⚁",
-        "⚂",
-        "⚃",
-        "⚄",
-        "⚅"
-    ];
-
-    return dadu[n];
-}
-
-
-// ==========================
-// MULAI ULANG
-// ==========================
-
-function mulaiUlang() {
-
-    posisi = 1;
-
-    document.getElementById("hasil")
-        .textContent = "-";
-
-    document.getElementById("dice")
-        .textContent = "🎲";
-
-    document.getElementById("pesan")
-        .textContent = "Permainan dimulai!";
-
-    const cell =
-        document.querySelector(
-            `[data-nomor="1"]`
-        );
-
-    const x =
-        cell.offsetLeft +
-        cell.offsetWidth / 2;
-
-    const y =
-        cell.offsetTop +
-        cell.offsetHeight / 2;
-
-    pion.style.left = x + "px";
-    pion.style.top = y + "px";
-
-    sedangBerjalan = false;
-}
-
-
-// ==========================
-// POSISI AWAL PION
-// ==========================
-
-window.addEventListener("load", () => {
-    mulaiUlang();
-});
-
-</script>
-
+<body class="flex flex-col min-h-screen justify-between p-2 md:p-6">
+
+    <header class="max-w-6xl mx-auto w-full flex flex-wrap items-center justify-between gap-4 mb-3">
+        <div class="flex items-center space-x-3">
+            <div class="bg-gradient-to-tr from-indigo-500 to-pink-500 p-2.5 rounded-2xl shadow-lg shadow-indigo-500/30">
+                <span class="text-3xl">🐍</span>
+            </div>
+            <div>
+                <h1 class="text-2xl md:text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-pink-400 to-indigo-300">
+                    Ular Tangga Modern
+                </h1>
+                <p class="text-xs text-slate-400">Petualangan Klasik dengan Tampilan Baru</p>
+            </div>
+        </div>
+
+        <!-- System Controls -->
+        <div class="flex items-center space-x-2">
+            <button id="btn-sound" class="p-2.5 glass-panel hover:bg-slate-700/60 rounded-xl text-slate-200 transition" title="Toggle Suara">
+                🔊
+            </button>
+            <button id="btn-rules" class="px-3 py-2 text-xs font-semibold glass-panel hover:bg-slate-700/60 rounded-xl text-slate-200 transition flex items-center gap-1.5">
+                <span>📖</span> Aturan
+            </button>
+            <button id="btn-restart" class="px-4 py-2 text-xs font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl shadow-lg shadow-indigo-600/30 text-white transition">
+                🔄 Game Baru
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start my-auto">
+        
+        <!-- Left: Game Board -->
+        <section class="lg:col-span-7 xl:col-span-8 flex justify-center w-full">
+            <div class="board-container bg-slate-900/80 p-2 rounded-2xl border border-slate-700/50">
+                <!-- Main Grid -->
+                <div id="board" class="board-grid"></div>
+                <!-- SVG layer for snakes & ladders -->
+                <svg id="svg-layer" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+                    <defs>
+                        <!-- Ladder Drop Shadow -->
+                        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="3" dy="5" stdDeviation="4" flood-color="#000" flood-opacity="0.5"/>
+                        </filter>
+                        <!-- Snake Shadow -->
+                        <filter id="snake-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="#000" flood-opacity="0.6"/>
+                        </filter>
+                    </defs>
+                </svg>
+                <!-- Pawns container -->
+                <div id="pawns-layer"></div>
+            </div>
+        </section>
+
+        <!-- Right: Control Panel & Status -->
+        <section class="lg:col-span-5 xl:col-span-4 flex flex-col gap-4 w-full">
+            
+            <!-- Turn Indicator & Dice Panel -->
+            <div class="glass-panel p-5 rounded-2xl flex flex-col items-center text-center shadow-xl border-indigo-500/20">
+                <div class="text-xs uppercase tracking-wider font-bold text-slate-400 mb-1">Giliran Berjalan</div>
+                <div id="turn-badge" class="flex items-center space-x-2 px-4 py-1.5 rounded-full bg-slate-800 border border-slate-700 mb-4 transition-all">
+                    <span id="turn-icon" class="text-xl">🔴</span>
+                    <span id="turn-name" class="font-bold text-base text-amber-300">Pemain 1</span>
+                </div>
+
+                <!-- Dice Rolling Interactive Zone -->
+                <div class="flex items-center justify-center gap-6 my-2 w-full">
+                    <div class="dice-box p-3 bg-slate-800/80 border border-slate-700 rounded-2xl flex items-center justify-center shadow-inner">
+                        <div id="dice-element" class="text-5xl select-none transition-transform duration-300">🎲</div>
+                    </div>
+                    
+                    <button id="btn-roll" class="flex-1 py-4 px-6 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 active:scale-95 disabled:opacity-50 disabled:pointer-events-none rounded-2xl font-black text-lg text-white shadow-lg shadow-emerald-500/30 transition">
+                        🎲 Lempar Dadu
+                    </button>
+                </div>
+
+                <!-- Game Status Message -->
+                <div id="status-message" class="mt-3 text-sm font-medium text-slate-300 min-h-[40px] flex items-center justify-center text-center bg-slate-900/50 w-full rounded-xl px-3 py-1.5 border border-slate-800">
+                    Klik tombol untuk melempar dadu!
+                </div>
+            </div>
+
+            <!-- Players Standings Card -->
+            <div class="glass-panel p-4 rounded-2xl shadow-xl">
+                <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-between">
+                    <span>Posisi Pemain</span>
+                    <span id="game-mode-tag" class="text-[10px] bg-indigo-900/60 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-700">2 Pemain</span>
+                </h3>
+
+                <div id="players-list" class="flex flex-col gap-2">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Game Activity Log -->
+            <div class="glass-panel p-4 rounded-2xl shadow-xl flex-1">
+                <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-2">Riwayat Permainan</h3>
+                <div id="game-log" class="h-32 overflow-y-auto custom-scrollbar text-xs space-y-1.5 pr-1 text-slate-300">
+                    <div class="text-slate-500 italic">Permainan siap dimulai. Selamat bermain!</div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="modal-setup" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel p-6 rounded-3xl max-w-md w-full border border-slate-700 shadow-2xl animate-fade-in">
+            <h2 class="text-2xl font-black text-center mb-1 text-white">Pengaturan Game Baru</h2>
+            <p class="text-xs text-slate-400 text-center mb-6">Pilih mode dan jumlah pemain untuk memulai</p>
+
+            <form id="form-setup" onsubmit="event.preventDefault(); startNewGameFromModal();">
+                <!-- Mode Selection -->
+                <div class="mb-5">
+                    <label class="block text-xs font-extrabold text-slate-300 uppercase tracking-wider mb-2">Mode Permainan</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="mode" value="pvp" checked class="peer sr-only">
+                            <div class="p-3 text-center rounded-xl bg-slate-800/80 border border-slate-700 peer-checked:border-indigo-500 peer-checked:bg-indigo-600/20 peer-checked:text-indigo-300 transition">
+                                <div class="text-xl mb-1">👥</div>
+                                <div class="font-bold text-xs">Pemain vs Pemain</div>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="mode" value="bot" class="peer sr-only">
+                            <div class="p-3 text-center rounded-xl bg-slate-800/80 border border-slate-700 peer-checked:border-indigo-500 peer-checked:bg-indigo-600/20 peer-checked:text-indigo-300 transition">
+                                <div class="text-xl mb-1">🤖</div>
+                                <div class="font-bold text-xs">Lawan Bot AI</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Player Count -->
+                <div class="mb-6">
+                    <label class="block text-xs font-extrabold text-slate-300 uppercase tracking-wider mb-2">Jumlah Pemain</label>
+                    <div class="grid grid-cols-3 gap-3" id="player-count-options">
+                        <button type="button" onclick="selectPlayerCount(2)" class="btn-count p-3 rounded-xl bg-indigo-600 text-white font-extrabold text-sm border border-indigo-500 transition">2 Pemain</button>
+                        <button type="button" onclick="selectPlayerCount(3)" class="btn-count p-3 rounded-xl bg-slate-800 text-slate-300 font-extrabold text-sm border border-slate-700 transition">3 Pemain</button>
+                        <button type="button" onclick="selectPlayerCount(4)" class="btn-count p-3 rounded-xl bg-slate-800 text-slate-300 font-extrabold text-sm border border-slate-700 transition">4 Pemain</button>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeModal()" class="w-1/3 py-3 rounded-xl font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition text-sm">Batal</button>
+                    <button type="submit" class="flex-1 py-3 rounded-xl font-bold bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30 hover:brightness-110 transition text-sm">Mulai Permainan 🚀</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-rules" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel p-6 rounded-3xl max-w-md w-full border border-slate-700 shadow-2xl">
+            <h2 class="text-xl font-black text-white mb-4 flex items-center gap-2">
+                <span>📖</span> Aturan Permainan
+            </h2>
+            <ul class="text-xs text-slate-300 space-y-2.5 list-disc list-inside mb-6 leading-relaxed">
+                <li>Semua pemain memulai dari kotak nomor 1.</li>
+                <li>Ganti giliran secara bergantian dengan melempar dadu (1-6).</li>
+                <li>Jika mendarat di bawah <b>Tangga (🪜)</b>, pemain akan otomatis naik ke puncaknya.</li>
+                <li>Jika mendarat di kepala <b>Ular (🐍)</b>, pemain akan merosot turun ke ekornya.</li>
+                <li>Mendapatkan dadu angka <b>6</b> memberikan kesempatan lempar dadu ekstra!</li>
+                <li>Pemain pertama yang tepat mencapai kotak <b>100</b> memenangkan pertandingan.</li>
+            </ul>
+            <button onclick="document.getElementById('modal-rules').classList.add('hidden')" class="w-full py-3 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition text-sm">Paham, Tutup</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // GAME CONFIGURATION & CONSTANTS
+        // ==========================================
+        
+        // Snakes configuration (Head -> Tail)
+        const SNAKES = {
+            98: 40,
+            84: 58,
+            73: 15,
+            56: 22,
+            48: 9,
+            34: 6
+        };
+
+        // Ladders configuration (Bottom -> Top)
+        const LADDERS = {
+            4: 25,
+            12: 46,
+            28: 69,
+            36: 62,
+            51: 87,
+            71: 92
+        };
+
+        // Color themes for players
+        const PLAYER_CONFIGS = [
+            { id: 0, name: "Pemain 1", color: "#ef4444", bgClass: "bg-red-500", textClass: "text-red-400", icon: "🔴" },
+            { id: 1, name: "Pemain 2", color: "#3b82f6", bgClass: "bg-blue-500", textClass: "text-blue-400", icon: "🔵" },
+            { id: 2, name: "Pemain 3", color: "#22c55e", bgClass: "bg-green-500", textClass: "text-green-400", icon: "🟢" },
+            { id: 3, name: "Pemain 4", color: "#eab308", bgClass: "bg-yellow-500", textClass: "text-yellow-400", icon: "🟡" }
+        ];
+
+        // Snake visual color variations
+        const SNAKE_COLORS = ['#ef4444', '#ec4899', '#8b5cf6', '#f97316'];
+
+        // Dice unicode icons
+        const DICE_ICONS = ['🎲', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+
+        // State variables
+        let numPlayers = 2;
+        let isVsBot = false;
+        let currentTurn = 0;
+        let positions = [1, 1, 1, 1];
+        let isMoving = false;
+        let soundEnabled = true;
+
+        // Audio Synth Engine (Web Audio API)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'step') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.08);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'ladder') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(250, now);
+                    osc.frequency.linearRampToValueAtTime(800, now + 0.4);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'snake') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.linearRampToValueAtTime(150, now + 0.5);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                } else if (type === 'win') {
+                    const notes = [400, 500, 600, 800];
+                    notes.forEach((freq, idx) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        o.frequency.value = freq;
+                        g.gain.setValueAtTime(0.2, now + idx * 0.12);
+                        g.gain.linearRampToValueAtTime(0.01, now + idx * 0.12 + 0.25);
+                        o.start(now + idx * 0.12);
+                        o.stop(now + idx * 0.12 + 0.25);
+                    });
+                }
+            } catch(e) {}
+        }
+
+        function buildBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+
+            // 10x10 Grid (Boustrophedon pattern: Left-to-Right then Right-to-Left)
+            for (let r = 9; r >= 0; r--) {
+                const isEvenRowFromBottom = (r % 2 === 0);
+                for (let c = 0; c < 10; c++) {
+                    const col = isEvenRowFromBottom ? c : (9 - c);
+                    const cellNum = r * 10 + col + 1;
+
+                    const cell = document.createElement('div');
+                    cell.className = 'cell border border-slate-700/40 font-bold';
+                    cell.dataset.num = cellNum;
+
+                    // Alternating background styling
+                    const isDark = (r + col) % 2 === 1;
+                    if (cellNum === 100) {
+                        cell.classList.add('bg-gradient-to-br', 'from-amber-500/40', 'to-yellow-600/30', 'text-amber-300');
+                    } else if (cellNum === 1) {
+                        cell.classList.add('bg-gradient-to-br', 'from-emerald-500/30', 'to-teal-600/20', 'text-emerald-300');
+                    } else {
+                        cell.classList.add(isDark ? 'bg-slate-800/70' : 'bg-slate-800/30', 'text-slate-400');
+                    }
+
+                    // Number label
+                    const label = document.createElement('span');
+                    label.textContent = cellNum;
+                    cell.appendChild(label);
+
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        // Get SVG center coordinates (0 to 1000 scale) for a tile number
+        function getTileCoordinates(num) {
+            const index = num - 1;
+            const row = Math.floor(index / 10); // 0 at bottom
+            const colInRow = index % 10;
+            const col = (row % 2 === 0) ? colInRow : (9 - colInRow);
+
+            // Row 0 is at bottom of board (y = 900 to 1000 in SVG coordinates)
+            const x = col * 100 + 50;
+            const y = (9 - row) * 100 + 50;
+            return { x, y };
+        }
+
+        function drawOverlayElements() {
+            const svg = document.getElementById('svg-layer');
+            // Retain <defs>
+            const defs = svg.querySelector('defs').outerHTML;
+            svg.innerHTML = defs;
+
+            // 1. Draw Ladders
+            let ladderIndex = 0;
+            for (const [startStr, endStr] of Object.entries(LADDERS)) {
+                const start = parseInt(startStr);
+                const end = parseInt(endStr);
+                const p1 = getTileCoordinates(start);
+                const p2 = getTileCoordinates(end);
+
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                const len = Math.hypot(dx, dy);
+                const ux = dx / len;
+                const uy = dy / len;
+                // Perpendicular vector
+                const px = -uy * 14;
+                const py = ux * 14;
+
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('filter', 'url(#shadow)');
+
+                // Left Rail
+                const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line1.setAttribute('x1', p1.x + px);
+                line1.setAttribute('y1', p1.y + py);
+                line1.setAttribute('x2', p2.x + px);
+                line1.setAttribute('y2', p2.y + py);
+                line1.setAttribute('stroke', '#d97706');
+                line1.setAttribute('stroke-width', '7');
+                line1.setAttribute('stroke-linecap', 'round');
+                g.appendChild(line1);
+
+                // Right Rail
+                const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line2.setAttribute('x1', p1.x - px);
+                line2.setAttribute('y1', p1.y - py);
+                line2.setAttribute('x2', p2.x - px);
+                line2.setAttribute('y2', p2.y - py);
+                line2.setAttribute('stroke', '#d97706');
+                line2.setAttribute('stroke-width', '7');
+                line2.setAttribute('stroke-linecap', 'round');
+                g.appendChild(line2);
+
+                // Rungs
+                const numRungs = Math.floor(len / 35);
+                for (let i = 1; i <= numRungs; i++) {
+                    const t = i / (numRungs + 1);
+                    const rx = p1.x + dx * t;
+                    const ry = p1.y + dy * t;
+
+                    const rung = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    rung.setAttribute('x1', rx + px);
+                    rung.setAttribute('y1', ry + py);
+                    rung.setAttribute('x2', rx - px);
+                    rung.setAttribute('y2', ry - py);
+                    rung.setAttribute('stroke', '#f59e0b');
+                    rung.setAttribute('stroke-width', '5');
+                    rung.setAttribute('stroke-linecap', 'round');
+                    g.appendChild(rung);
+                }
+
+                svg.appendChild(g);
+                ladderIndex++;
+            }
+
+            // 2. Draw Snakes
+            let snakeColorIdx = 0;
+            for (const [headStr, tailStr] of Object.entries(SNAKES)) {
+                const head = parseInt(headStr);
+                const tail = parseInt(tailStr);
+                const p1 = getTileCoordinates(head);
+                const p2 = getTileCoordinates(tail);
+
+                const color = SNAKE_COLORS[snakeColorIdx % SNAKE_COLORS.length];
+                snakeColorIdx++;
+
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                const len = Math.hypot(dx, dy);
+                const ux = dx / len;
+                const uy = dy / len;
+                const px = -uy * 40;
+                const py = ux * 40;
+
+                // Midpoint wiggles for snake S-curve
+                const cx1 = p1.x + dx * 0.3 + px;
+                const cy1 = p1.y + dy * 0.3 + py;
+                const cx2 = p1.x + dx * 0.7 - px;
+                const cy2 = p1.y + dy * 0.7 - py;
+
+                const pathData = `M ${p1.x} ${p1.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${p2.x} ${p2.y}`;
+
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('filter', 'url(#snake-shadow)');
+
+                // Snake outer body
+                const snakeBody = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                snakeBody.setAttribute('d', pathData);
+                snakeBody.setAttribute('fill', 'none');
+                snakeBody.setAttribute('stroke', color);
+                snakeBody.setAttribute('stroke-width', '18');
+                snakeBody.setAttribute('stroke-linecap', 'round');
+                g.appendChild(snakeBody);
+
+                // Snake inner pattern spots
+                const snakePattern = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                snakePattern.setAttribute('d', pathData);
+                snakePattern.setAttribute('fill', 'none');
+                snakePattern.setAttribute('stroke', '#fef08a');
+                snakePattern.setAttribute('stroke-width', '6');
+                snakePattern.setAttribute('stroke-dasharray', '10,12');
+                snakePattern.setAttribute('stroke-linecap', 'round');
+                g.appendChild(snakePattern);
+
+                // Snake Head Circle & Eyes
+                const headGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                
+                const headCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                headCircle.setAttribute('cx', p1.x);
+                headCircle.setAttribute('cy', p1.y);
+                headCircle.setAttribute('r', '14');
+                headCircle.setAttribute('fill', color);
+                headGroup.appendChild(headCircle);
+
+                const eye1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                eye1.setAttribute('cx', p1.x - 4);
+                eye1.setAttribute('cy', p1.y - 3);
+                eye1.setAttribute('r', '3');
+                eye1.setAttribute('fill', '#ffffff');
+                headGroup.appendChild(eye1);
+
+                const eye2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                eye2.setAttribute('cx', p1.x + 4);
+                eye2.setAttribute('cy', p1.y - 3);
+                eye2.setAttribute('r', '3');
+                eye2.setAttribute('fill', '#ffffff');
+                headGroup.appendChild(eye2);
+
+                g.appendChild(headGroup);
+                svg.appendChild(g);
+            }
+        }
+
+        function createPawns() {
+            const container = document.getElementById('pawns-layer');
+            container.innerHTML = '';
+
+            for (let i = 0; i < numPlayers; i++) {
+                const config = PLAYER_CONFIGS[i];
+                const pawn = document.createElement('div');
+                pawn.id = `pawn-${i}`;
+                pawn.className = `pawn ${config.bgClass} text-white font-extrabold`;
+                pawn.innerHTML = config.icon;
+                container.appendChild(pawn);
+            }
+            updatePawnPositions();
+        }
+
+        function updatePawnPositions() {
+            for (let i = 0; i < numPlayers; i++) {
+                const pawn = document.getElementById(`pawn-${i}`);
+                if (!pawn) continue;
+
+                const pos = positions[i];
+                const coords = getTileCoordinates(pos); // 0-1000 scale
+
+                // Offset multiple pawns slightly so they don't cover each other completely
+                const offset = (i - (numPlayers - 1) / 2) * 12;
+
+                pawn.style.left = `calc(${coords.x / 10}% + ${offset}px)`;
+                pawn.style.top = `calc(${coords.y / 10}%)`;
+            }
+        }
+
+        function updateUIState() {
+            // Update turn indicator badge
+            const config = PLAYER_CONFIGS[currentTurn];
+            const isBot = isVsBot && currentTurn === 1;
+
+            document.getElementById('turn-icon').textContent = config.icon;
+            document.getElementById('turn-name').textContent = isBot ? "Bot AI 🤖" : config.name;
+            document.getElementById('turn-name').className = `font-bold text-base ${config.textClass}`;
+
+            // Update Roll Button state
+            const btnRoll = document.getElementById('btn-roll');
+            if (isMoving || (isVsBot && currentTurn === 1)) {
+                btnRoll.disabled = true;
+                if (isVsBot && currentTurn === 1) {
+                    btnRoll.textContent = "🤖 Bot Berpikir...";
+                } else {
+                    btnRoll.textContent = "⏳ Moving...";
+                }
+            } else {
+                btnRoll.disabled = false;
+                btnRoll.textContent = "🎲 Lempar Dadu";
+            }
+
+            // Update Players Leaderboard List
+            const playersList = document.getElementById('players-list');
+            playersList.innerHTML = '';
+
+            for (let i = 0; i < numPlayers; i++) {
+                const cfg = PLAYER_CONFIGS[i];
+                const isCurrent = i === currentTurn;
+                const isBotPlayer = isVsBot && i === 1;
+
+                const card = document.createElement('div');
+                card.className = `flex items-center justify-between p-2.5 rounded-xl border transition ${
+                    isCurrent 
+                        ? 'bg-slate-800 border-indigo-500/80 shadow-md ring-1 ring-indigo-500/30' 
+                        : 'bg-slate-900/40 border-slate-800'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-center space-x-2.5">
+                        <span class="text-xl">${cfg.icon}</span>
+                        <div>
+                            <div class="text-xs font-bold ${cfg.textClass}">${isBotPlayer ? "Bot AI 🤖" : cfg.name}</div>
+                            <div class="text-[10px] text-slate-400">Kotak saat ini</div>
+                        </div>
+                    </div>
+                    <div class="px-3 py-1 rounded-lg bg-slate-950 font-black text-sm text-amber-400 border border-slate-800">
+                        ${positions[i]}
+                    </div>
+                `;
+                playersList.appendChild(card);
+            }
+        }
+
+        function logActivity(text) {
+            const log = document.getElementById('game-log');
+            const entry = document.createElement('div');
+            entry.className = 'text-xs text-slate-300 border-b border-slate-800/60 pb-1';
+            entry.innerHTML = text;
+            log.prepend(entry);
+        }
+
+        function setStatus(msg) {
+            document.getElementById('status-message').innerHTML = msg;
+        }
+
+        async function handleRollDice() {
+            if (isMoving) return;
+            isMoving = true;
+            updateUIState();
+
+            // Dice Rolling Animation
+            const diceEl = document.getElementById('dice-element');
+            diceEl.classList.add('dice-rolling');
+            
+            // Play roll sound ticks
+            let rollTicks = 0;
+            const rollInterval = setInterval(() => {
+                diceEl.textContent = DICE_ICONS[Math.floor(Math.random() * 6) + 1];
+                rollTicks++;
+            }, 80);
+
+            await new Promise(res => setTimeout(res, 700));
+            clearInterval(rollInterval);
+            diceEl.classList.remove('dice-rolling');
+
+            // Actual Dice Value
+            const rolledValue = Math.floor(Math.random() * 6) + 1;
+            diceEl.textContent = DICE_ICONS[rolledValue];
+
+            const player = PLAYER_CONFIGS[currentTurn];
+            const playerName = (isVsBot && currentTurn === 1) ? "Bot AI 🤖" : player.name;
+
+            logActivity(`<b>${playerName}</b> mendapat angka dadu <b>${rolledValue}</b>`);
+            setStatus(`<b>${playerName}</b> melempar dadu <b>${rolledValue}</b>`);
+
+            const currentPos = positions[currentTurn];
+            const targetPos = currentPos + rolledValue;
+
+            if (targetPos > 100) {
+                setStatus(`⚠️ Melebihi 100! <b>${playerName}</b> tetap di kotak ${currentPos}`);
+                await new Promise(res => setTimeout(res, 1000));
+                finishTurn(rolledValue === 6);
+                return;
+            }
+
+            // Hop step-by-step
+            for (let p = currentPos + 1; p <= targetPos; p++) {
+                positions[currentTurn] = p;
+                updatePawnPositions();
+                
+                const pawnEl = document.getElementById(`pawn-${currentTurn}`);
+                if (pawnEl) {
+                    pawnEl.classList.add('pawn-hop');
+                    setTimeout(() => pawnEl.classList.remove('pawn-hop'), 300);
+                }
+                
+                playSound('step');
+                updateUIState();
+                await new Promise(res => setTimeout(res, 350));
+            }
+
+            // Check Ladder or Snake at final destination
+            let finalPos = positions[currentTurn];
+
+            if (LADDERS[finalPos]) {
+                const climbTo = LADDERS[finalPos];
+                setStatus(`🪜 Mantap! <b>${playerName}</b> naik tangga ke kotak ${climbTo}`);
+                logActivity(`✨ <b>${playerName}</b> naik tangga dari ${finalPos} ke <b>${climbTo}</b>`);
+                playSound('ladder');
+
+                await new Promise(res => setTimeout(res, 600));
+                positions[currentTurn] = climbTo;
+                updatePawnPositions();
+                updateUIState();
+                await new Promise(res => setTimeout(res, 600));
+            } else if (SNAKES[finalPos]) {
+                const slideTo = SNAKES[finalPos];
+                setStatus(`🐍 Awas! <b>${playerName}</b> dipatok ular, turun ke kotak ${slideTo}`);
+                logActivity(`😭 <b>${playerName}</b> tergelincir ular ke <b>${slideTo}</b>`);
+                playSound('snake');
+
+                await new Promise(res => setTimeout(res, 600));
+                positions[currentTurn] = slideTo;
+                updatePawnPositions();
+                updateUIState();
+                await new Promise(res => setTimeout(res, 600));
+            }
+
+            // Check Win Condition
+            if (positions[currentTurn] === 100) {
+                playSound('win');
+                confetti({
+                    particleCount: 150,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+                setStatus(`🎉 <b>${playerName} MEMENANGKAN PERMAINAN!</b> 🏆`);
+                logActivity(`🏆 <b>${playerName} TELAH MENCAPAI KOTAK 100 & MENANG!</b>`);
+                isMoving = false;
+                updateUIState();
+                return;
+            }
+
+            // Extra turn for rolling 6
+            const gotExtraTurn = rolledValue === 6;
+            if (gotExtraTurn) {
+                setStatus(`🎉 Angka 6! <b>${playerName}</b> mendapat lemparan ekstra!`);
+            }
+
+            finishTurn(gotExtraTurn);
+        }
+
+        function finishTurn(extraTurn = false) {
+            if (!extraTurn) {
+                currentTurn = (currentTurn + 1) % numPlayers;
+            }
+
+            isMoving = false;
+            updateUIState();
+
+            // Trigger AI Bot turn automatically if applicable
+            if (isVsBot && currentTurn === 1) {
+                setTimeout(() => {
+                    handleRollDice();
+                }, 1000);
+            }
+        }
+
+        function openNewGameModal() {
+            document.getElementById('modal-setup').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-setup').classList.add('hidden');
+        }
+
+        function selectPlayerCount(count) {
+            numPlayers = count;
+            const buttons = document.querySelectorAll('#player-count-options button');
+            buttons.forEach((btn, idx) => {
+                if (idx + 2 === count) {
+                    btn.className = "btn-count p-3 rounded-xl bg-indigo-600 text-white font-extrabold text-sm border border-indigo-500 transition";
+                } else {
+                    btn.className = "btn-count p-3 rounded-xl bg-slate-800 text-slate-300 font-extrabold text-sm border border-slate-700 transition";
+                }
+            });
+        }
+
+        function startNewGameFromModal() {
+            const modeVal = document.querySelector('input[name="mode"]:checked').value;
+            isVsBot = modeVal === 'bot';
+            if (isVsBot) {
+                numPlayers = 2; // Forced 2 players for Vs Bot
+            }
+
+            document.getElementById('game-mode-tag').textContent = isVsBot ? "Pemain vs Bot" : `${numPlayers} Pemain`;
+
+            positions = [1, 1, 1, 1];
+            currentTurn = 0;
+            isMoving = false;
+
+            document.getElementById('game-log').innerHTML = '<div class="text-slate-500 italic">Game baru dimulai. Good luck!</div>';
+            setStatus("Permainan dimulai! Klik tombol dadu untuk melangkah.");
+
+            createPawns();
+            updateUIState();
+            closeModal();
+        }
+
+        window.addEventListener('load', () => {
+            buildBoard();
+            drawOverlayElements();
+            createPawns();
+            updateUIState();
+
+            // Redraw overlay graphics on window resize to maintain alignment
+            window.addEventListener('resize', () => {
+                drawOverlayElements();
+                updatePawnPositions();
+            });
+
+            // Event Listeners
+            document.getElementById('btn-roll').addEventListener('click', handleRollDice);
+            document.getElementById('btn-restart').addEventListener('click', openNewGameModal);
+            document.getElementById('btn-rules').addEventListener('click', () => {
+                document.getElementById('modal-rules').classList.remove('hidden');
+            });
+
+            document.getElementById('btn-sound').addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                document.getElementById('btn-sound').textContent = soundEnabled ? "🔊" : "🔇";
+            });
+        });
+    </script>
 </body>
 </html>
